@@ -1,0 +1,16 @@
+{
+  "name": "TemprSens",
+  "keywords": "temperature, sensor, DS18B20",
+  "description": "The TemprSens class derived from DallasTemperature and it includes multiple TemprSensDevice with names of each temeprature sensors for using in LCDMenu.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/inklu/TemprSens"
+  },
+  "version": "1.0.0",
+  "authors": {
+    "name": "Igor Klyushnyov",
+    "url": "https://github.com/inklu"
+  },
+  "frameworks": "arduino",
+  "platforms": "*"
+}
