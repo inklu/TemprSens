@@ -93,26 +93,29 @@ void loop() {
     cycle += 1000;
     dtime.tick(); //+1sec to clock
 //display date&time when menu is disabled 
-    if (!m.isActive() && id==sensors.getDeviceCount()){
+    if (!m.isActive()){
+      if(id==sensors.getDeviceCount()) {
         lcd.clear();
         lcd.noCursor();
         lcd.setCursor(0,0);
         lcd.print(decimate(dtime.hour)+":"+decimate(dtime.minute)+":"+decimate(dtime.second));
         lcd.setCursor(0,1);
         lcd.print((String) dtime.year+"-"+decimate(dtime.month)+"-"+decimate(dtime.day));
-    } 
-  }
-//display temperature from each sensors
-  if(mls >= change){
-    change += MLS_CHANGE_CYCLE;
-    if(!m.isActive() && id<sensors.getDeviceCount()){
+      }
+//display tempr sensors inf      
+      else {
         lcd.clear();
         lcd.noCursor();
         lcd.setCursor(0,0);
         lcd.print(sensors[id].name);
         lcd.setCursor(0,1);
-        lcd.print(sensors[id].getTempC(),DEC);
-        if(++id > sensors.getDeviceCount()) id = 0;
-    }
+        lcd.print(sensors[id].getTempC(),2);
+      }
+    } 
+  }
+//cycle on display
+  if(mls >= change){
+    change += MLS_CHANGE_CYCLE;
+    if(++id > sensors.getDeviceCount()) id = 0;
   }
 }
