@@ -1,10 +1,10 @@
 #include <TemprSens.h>
 
-byte TemprSensDevice::sid;
+byte TemprSensDevice::sid=0;
 
 TemprSensDevice::TemprSensDevice(DallasTemperature *_dt,OneWire *_ow):dt(_dt),ow(_ow){
   id = sid++;
-  _name = "Sensor"+id;
+  _name = "Sensor"+String(id);
 }
 
 float TemprSensDevice::getTempC(){
