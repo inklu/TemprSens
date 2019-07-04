@@ -28,7 +28,7 @@ class TemprSensDevice {
   public:
     String &name = _name;
     TemprSensDevice(DallasTemperature *_dt,OneWire *_ow);
-    TemprSensDevice(){ id = sid++; _name = "Sensor"+id; };
+    TemprSensDevice(){ id = sid++; _name = "Sensor"+String(id); };
     void bindSensor(DallasTemperature *_dt,OneWire *_ow){ dt=_dt; ow=_ow; }
     const String getName(){ return _name; }
     void setName(const String _nm){ _name = _nm; }
