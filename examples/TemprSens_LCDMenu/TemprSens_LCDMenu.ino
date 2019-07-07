@@ -33,34 +33,37 @@ TemprSens sensors(ONE_WIRE_BUS);
 void MyMenu::create() {
   MenuLine::MenuLeaf::MenuLeaf_time *mlt;  //time
   MenuLine::MenuLeaf::MenuLeaf_date *mld;  //date
-  MenuLine::MenuLeaf::MenuLeaf_str *mls;  //string
-  MenuLine::MenuLeaf::MenuLeaf_num<int8_t> *mlf1,*mlf2;  //float
+  MenuLine::MenuLeaf::MenuLeaf_str *mls;  //string: sensor name
+  MenuLine::MenuLeaf::MenuLeaf_num<int8_t> *mlf1,*mlf2;  //min\max temperature for alarm
   //MenuLine::MenuLeaf::MenuLeaf_bool *mlb;  //bool
-  MenuLine::MenuLeaf::MenuLeaf_func *mlc;  //function call
+  MenuLine::MenuLeaf::MenuLeaf_func *mlc;  //function call: reset avg temp
   MenuLine::MenuNode *mn; //node
   MenuLine *ml;  //any line
 
-  pFirstLine = mlt = new MenuLine::MenuLeaf::MenuLeaf_time;//newMenuLine(mtTime);  //create leaf of time
+  //time 
+  pFirstLine = mlt = new MenuLine::MenuLeaf::MenuLeaf_time;  //create leaf of time
   mlt->name = "Time";     //leaf name
   mlt->setValue(&dtime);    //set value as a pointer to global variable
   mn->pFirstChild = mlt;    //the first line of the node
   mlt->pParentLine = mn;    //parent is node
   
-  mld = new MenuLine::MenuLeaf::MenuLeaf_date;//newMenuLine(mtDate);      //create leaf of date
+  //date
+  mld = new MenuLine::MenuLeaf::MenuLeaf_date;      //create leaf of date
   mld->name = "Date";         //leaf name
   mld->setValue(&dtime);        //set value as a pointer to global variable
   mld->pParentLine = mn;        //parent is node
   mn->pFirstChild->pNextLine = mld;   //follows the time line
   mld->pPreviousLine = mn->pFirstChild; //predecessor - time line
 
+  //sensors
   ml = mld;
   for(byte i = 0;i<sensors.getDeviceCount();i++){
-    //one wire sensor
+    //node: one device
     mn = new MenuLine::MenuNode;
     mn->name = sensors[i].name;
     ml->pNextLine = mn;
     mn->pPreviousLine = ml;
-    //entrails of one wire sensor: devices
+    //entrails of the sensor: name,min\max tempr
     //changeable device name
     mls = new MenuLine::MenuLeaf::MenuLeaf_str;
     mls->name = "Name";
@@ -131,7 +134,7 @@ void blinkLCD(const unsigned long _mls=0){
     }
   }
 }
-
+////reset average temperatures indications
 void resetAvgTemp(){
   for(byte i=0;i<sensors.getDeviceCount();i++) {
     sensors[i].resetAvgTemp();
@@ -151,7 +154,7 @@ void setup() {
 */
   sensors.begin();
   
-  m.create();
+  m.create(); //create menu
   mec.bindMenu(m);// bind menu to controller
 
   cycle = change = (uint64_t)millis() + 1000;
@@ -181,6 +184,7 @@ void loop() {
       }
 //display tempr sensors info     
       else {
+        //switch blinking LCD on\off when sensor alarm is triggered
         DeviceAddress da;
         sensors.getAddress(da,id);
         if(sensors.hasAlarm(da)) blinkSwitchLCD(true);
@@ -205,7 +209,7 @@ void loop() {
   }
 //blink LCD
   if(!m.isActive()) blinkLCD();  
-//cycle on display
+//cycle info on display
   if(mls >= change){
     change += MLS_CHANGE_CYCLE;
     if(++id > sensors.getDeviceCount()) id = 0;
