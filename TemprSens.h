@@ -1,9 +1,11 @@
 #ifndef TEMPRSENS_H
 #define TEMPRSENS_H
 
+/*
 #ifndef DEBUG
 #define DEBUG
 #endif
+*/
 
 #if ARDUINO >= 100
   #include <Arduino.h>
@@ -17,34 +19,62 @@
 
 //#define ONE_WIRE_BUS 7
 //#define TEMPERATURE_PRECISION 10
-#define MLS_CHANGE_CYCLE 5000
+//#define MLS_CHANGE_CYCLE 5000
+#define REQUEST_TEMP_EACH_MLS 10000
 
 class TemprSensDevice {
-    static byte sid;
-    String _name;
-    byte id;
+    static byte sid;    //device count actualy
+    float tempC=0,         //temperature C
+          avgTempC=0;
+    /*
+    String _name;       //changable device name for display
+    int8_t _minTempC=-50,  //minimum temperature for alarm
+           _maxTempC=100;  //maximum temperature for alarm
+    */
+    //bool _alarmActive=false; //alarm active indicator
+    byte id;                 //device ID
+
     OneWire *ow;
     DallasTemperature *dt;
+
+    inline void initialize();
+    inline void initAlarmTemp();
+    uint64_t mlsCycle=0;
+    void requestTempC();
   public:
-    String &name = _name;
+    /*
+    String &name = _name; //references to name,temps that are needed for changes through menu
+    int8_t &minTempC = _minTempC,
+           &maxTempC = _maxTempC;
+    */
+    String name;     //changable device name for display
+    int8_t minTempC=-55,  //minimum temperature for alarm
+           maxTempC=125; //maximum temperature for alarm
+    //bool &alarmActive = _alarmActive;
+    //bool alarmActive=false; //alarm active indicator
+    TemprSensDevice();
     TemprSensDevice(DallasTemperature *_dt,OneWire *_ow);
-    TemprSensDevice(){ id = sid++; _name = "Sensor"+String(id); };
-    void bindSensor(DallasTemperature *_dt,OneWire *_ow){ dt=_dt; ow=_ow; }
-    const String getName(){ return _name; }
-    void setName(const String _nm){ _name = _nm; }
-    TemprSensDevice operator=(String _nm){ _name = _nm; }
-    operator float(){ return getTempC(); }
-    float getTempC();
+    void bindSensor(DallasTemperature *_dt,OneWire *_ow);
+    //const String getName(){ return _name; }
+    //void setName(const String _nm){ _name = _nm; }
+    //TemprSensDevice operator=(String _nm){ _name = _nm; }
+    //operator float(){ return getTempC(); }
+    float getTempC(const uint64_t _mls=0);
+    float getAvgTempC(){ return avgTempC; }
+    //bool isAlarmActive(){ return _alarmActive; }
+    void resetAvgTemp();
 };
 
 class TemprSens: public DallasTemperature {
     OneWire _ow;
-    TemprSensDevice *devs=nullptr;
+    TemprSensDevice *devs;
   public:
     const OneWire &ow = _ow;
     TemprSens(const byte _pin);
     void begin();
     TemprSensDevice& operator[](const byte i);
+    TemprSensDevice& operator[](const DeviceAddress addr);
+    //void processAlarms();
 };
 
 
