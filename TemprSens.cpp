@@ -58,7 +58,7 @@ void TemprSensDevice::requestTempC(){
   dt->requestTemperaturesByIndex(id);
   tempC = dt->getTempCByIndex(id);
   //average temp calc
-  avgTempC = avgTempC ? ( avgTempC + tempC ) / 2 : tempC;
+  avgTempC = avgTempC ? ( avgTempC * (1 - COEF_K) + tempC * COEF_K ) : tempC;
 }
 
 void TemprSensDevice::resetAvgTemp(){

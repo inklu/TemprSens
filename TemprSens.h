@@ -17,10 +17,9 @@
 #include <OneWire.h>
 #include <DallasTemperature.h>
 
-//#define ONE_WIRE_BUS 7
-//#define TEMPERATURE_PRECISION 10
-//#define MLS_CHANGE_CYCLE 5000
-#define REQUEST_TEMP_EACH_MLS 10000
+#define REQUEST_TEMP_EACH_MLS 30000
+//smoothing factor
+#define COEF_K 0.01
 
 class TemprSensDevice {
     static byte sid;    //device count actualy
@@ -50,8 +49,6 @@ class TemprSensDevice {
     String name;     //changable device name for display
     int8_t minTempC=-55,  //minimum temperature for alarm
            maxTempC=125; //maximum temperature for alarm
-    //bool &alarmActive = _alarmActive;
-    //bool alarmActive=false; //alarm active indicator
     TemprSensDevice();
     TemprSensDevice(DallasTemperature *_dt,OneWire *_ow);
     void bindSensor(DallasTemperature *_dt,OneWire *_ow);
@@ -61,7 +58,6 @@ class TemprSensDevice {
     //operator float(){ return getTempC(); }
     float getTempC(const uint64_t _mls=0);
     float getAvgTempC(){ return avgTempC; }
-    //bool isAlarmActive(){ return _alarmActive; }
     void resetAvgTemp();
 };
 
@@ -74,7 +70,6 @@ class TemprSens: public DallasTemperature {
     void begin();
     TemprSensDevice& operator[](const byte i);
     TemprSensDevice& operator[](const DeviceAddress addr);
-    //void processAlarms();
 };
 
 
