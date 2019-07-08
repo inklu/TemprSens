@@ -5,11 +5,20 @@
 #define ONE_WIRE_BUS 7
 #define TEMPERATURE_PRECISION 10
 //Cycle display devices&clock on LCD
-#define MLS_CHANGE_CYCLE 3000
+#define MLS_CHANGE_CYCLE 7000
 //Degrees of Celsius sign
 #define LCD_TXT_TEMPC String((char)223)+"C"
 //Display on\off time for blinking
 #define LCD_BLINK_MLS 500
+
+
+//global Temperature Sensors
+TemprSens sensors(ONE_WIRE_BUS);
+
+//global date&time for clock
+DTime dtime(2019,05,27,10,20,30);
+unsigned long cycle,change,mls;
+byte id=0;
 
 //derive class to overload create method 
 class MyMenu:public MenuController::Menu {
@@ -18,52 +27,49 @@ class MyMenu:public MenuController::Menu {
     void create();
 };
 
-//global date&time for clock
-DTime dtime(2019,05,27,10,20,30);
-unsigned long cycle,change,mls;
-byte id=0;
-
 //void resetAlarms();
 void resetAvgTemp();
 
-//global Temperature Sensors
-TemprSens sensors(ONE_WIRE_BUS);
+//derive class to overload outAction method
+class MyEncController:public MenuEncoderController{
+  public:
+    MyEncController(const byte _clkPin, const byte _dtPin, const byte _swPin):MenuEncoderController(_clkPin,_dtPin,_swPin){}
+  protected:
+    void outAction(const mcPos _mcp, const mcEvent _mce);
+};
 
 //create menu
 void MyMenu::create() {
   MenuLine::MenuLeaf::MenuLeaf_time *mlt;  //time
   MenuLine::MenuLeaf::MenuLeaf_date *mld;  //date
-  MenuLine::MenuLeaf::MenuLeaf_str *mls;  //string: sensor name
-  MenuLine::MenuLeaf::MenuLeaf_num<int8_t> *mlf1,*mlf2;  //min\max temperature for alarm
+  MenuLine::MenuLeaf::MenuLeaf_str *mls;  //string
+  MenuLine::MenuLeaf::MenuLeaf_num<int8_t> *mlf1,*mlf2;  //float
   //MenuLine::MenuLeaf::MenuLeaf_bool *mlb;  //bool
-  MenuLine::MenuLeaf::MenuLeaf_func *mlc;  //function call: reset avg temp
+  MenuLine::MenuLeaf::MenuLeaf_func *mlc;  //function call
   MenuLine::MenuNode *mn; //node
   MenuLine *ml;  //any line
 
-  //time 
-  pFirstLine = mlt = new MenuLine::MenuLeaf::MenuLeaf_time;  //create leaf of time
+  pFirstLine = mlt = new MenuLine::MenuLeaf::MenuLeaf_time;//newMenuLine(mtTime);  //create leaf of time
   mlt->name = "Time";     //leaf name
   mlt->setValue(&dtime);    //set value as a pointer to global variable
   mn->pFirstChild = mlt;    //the first line of the node
   mlt->pParentLine = mn;    //parent is node
   
-  //date
-  mld = new MenuLine::MenuLeaf::MenuLeaf_date;      //create leaf of date
+  mld = new MenuLine::MenuLeaf::MenuLeaf_date;//newMenuLine(mtDate);      //create leaf of date
   mld->name = "Date";         //leaf name
   mld->setValue(&dtime);        //set value as a pointer to global variable
   mld->pParentLine = mn;        //parent is node
   mn->pFirstChild->pNextLine = mld;   //follows the time line
   mld->pPreviousLine = mn->pFirstChild; //predecessor - time line
 
-  //sensors
   ml = mld;
   for(byte i = 0;i<sensors.getDeviceCount();i++){
-    //node: one device
+    //one wire sensor
     mn = new MenuLine::MenuNode;
     mn->name = sensors[i].name;
     ml->pNextLine = mn;
     mn->pPreviousLine = ml;
-    //entrails of the sensor: name,min\max tempr
+    //entrails of one wire sensor: devices
     //changeable device name
     mls = new MenuLine::MenuLeaf::MenuLeaf_str;
     mls->name = "Name";
@@ -102,9 +108,17 @@ void MyMenu::create() {
   pActiveLine = pFirstLine; //active line is the first line
 }
 
+//outAction of MenuController class
+void MyEncController::outAction(const mcPos _mcp, const mcEvent _mce)
+{
+  if(_mcp == mcpOK && _mce == mceClick){
+    if(++::id > sensors.getDeviceCount()) ::id = 0; //switch the display info by single click OK
+  }
+}
+
 MyMenu m; //define menu object
 byte clkPin=9,dtPin=10,swPin=8; //rotary encoder parms
-MenuEncoderController mec(clkPin,dtPin,swPin);//define encoder controller
+MyEncController mec(clkPin,dtPin,swPin);//define encoder controller
 
 //LCD parms
 const int rs = 12, en = 11, d4 = 5, d5 = 4, d6 = 3, d7 = 2;
@@ -134,7 +148,7 @@ void blinkLCD(const unsigned long _mls=0){
     }
   }
 }
-////reset average temperatures indications
+
 void resetAvgTemp(){
   for(byte i=0;i<sensors.getDeviceCount();i++) {
     sensors[i].resetAvgTemp();
@@ -154,7 +168,7 @@ void setup() {
 */
   sensors.begin();
   
-  m.create(); //create menu
+  m.create();
   mec.bindMenu(m);// bind menu to controller
 
   cycle = change = (uint64_t)millis() + 1000;
@@ -184,7 +198,6 @@ void loop() {
       }
 //display tempr sensors info     
       else {
-        //switch blinking LCD on\off when sensor alarm is triggered
         DeviceAddress da;
         sensors.getAddress(da,id);
         if(sensors.hasAlarm(da)) blinkSwitchLCD(true);
@@ -209,7 +222,7 @@ void loop() {
   }
 //blink LCD
   if(!m.isActive()) blinkLCD();  
-//cycle info on display
+//cycle on display
   if(mls >= change){
     change += MLS_CHANGE_CYCLE;
     if(++id > sensors.getDeviceCount()) id = 0;
