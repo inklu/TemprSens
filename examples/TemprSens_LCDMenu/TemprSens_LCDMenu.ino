@@ -8,9 +8,12 @@
 #define MLS_CHANGE_CYCLE 7000
 //Degrees of Celsius sign
 #define LCD_TXT_TEMPC String((char)223)+"C"
-//Display on\off time for blinking
+//LCD on\off time for blinking in mls
 #define LCD_BLINK_MLS 500
 
+#ifdef DEBUG
+#include <MemoryFree.h>
+#endif
 
 //global Temperature Sensors
 TemprSens sensors(ONE_WIRE_BUS);
@@ -113,6 +116,7 @@ void MyEncController::outAction(const mcPos _mcp, const mcEvent _mce)
 {
   if(_mcp == mcpOK && _mce == mceClick){
     if(++::id > sensors.getDeviceCount()) ::id = 0; //switch the display info by single click OK
+    change += MLS_CHANGE_CYCLE;
   }
 }
 
@@ -155,9 +159,9 @@ void resetAvgTemp(){
   }
   lcd.clear();
   lcd.setCursor(0,0);
-  lcd.print("Average Temp");
+  lcd.print(F("Average Temp"));
   lcd.setCursor(0,1);
-  lcd.print("are reseted");
+  lcd.print(F("are reseted"));
 }
 
 void setup() {
@@ -193,6 +197,9 @@ void loop() {
         lcd.noBlink();
         lcd.setCursor(0,0);
         lcd.print(decimate(dtime.hour)+":"+decimate(dtime.minute)+":"+decimate(dtime.second));
+#ifdef DEBUG
+        lcd.print(String("  ")+freeMemory());
+#endif
         lcd.setCursor(0,1);
         lcd.print((String) dtime.year+"-"+decimate(dtime.month)+"-"+decimate(dtime.day));
       }
